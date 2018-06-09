@@ -7,5 +7,5 @@ The full analysis is contained in the package vignette "MED_Gear_Analysis.pdf" t
 To install the package in R, run
 ```
 install.packages("devtools")
-devtools::install_github("username/packagename")
+devtools::install_github("tcwain/GearComparisonAnalysis2018")
 ```
