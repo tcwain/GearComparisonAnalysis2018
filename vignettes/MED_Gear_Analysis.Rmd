@@ -1,5 +1,6 @@
 ---
 output: rmarkdown::pdf_document
+urlcolor: blue
 vignette: >
   %\VignetteIndexEntry{"MED Gear Comparison Analysis"}
   %\VignetteEngine{knitr::rmarkdown}
@@ -34,30 +35,12 @@ knitr::opts_chunk$set(fig.width=6, fig.height=9, dpi=150,
 
 This document presents full statistical results and describes the 
 R code used to conduct the analysis in Wainwright et al.
-_"Effect of a mammal excluder device on catches of small pelagic fishes"_.
+_"Effect of a mammal excluder device on catches of small pelagic fishes"_. 
+Data and scripts for the analysis are available in the R package 
+'GearComparisonAnalysis2018' available on GitHub at {{ADD LINK!}}.
 
-### How to run the analysis
-
-This is an R Markdown document generated using the R
-contributed package ``"knitr"``. It can be run from the R command prompt, 
-or from the RStudio console to generate a web (HTML) page that includes 
-both content as well as the output of any embedded R code chunks
-within the document.
-
-**NOTE:** "R" is open source software freely available from 
-http://www.R-project.org. "RStudio" is open-source software freely 
-available from http://www.rstudio.com. The R contributed packages 
-``"rmarkdown"``, ``"knitr"`` and ``"MASS"`` need to be installed before 
-running this analysis.
-
-**From the RStudio console**, open the document "MED_Gear_Comparison.Rmd",
-and click the "Knit HTML" button. Click the "Help" toolbar button for more 
-details on using ``knitr`` and R Markdown.
-
-**From the R command line** in the directory containing the file 
-"MED_Gear_Comparison.Rmd", run the command
-``rmarkdown::render("MED_Gear_Comparison.Rmd")``. **NOTE** that this method
-also requires that the ``pandoc`` libraries are installed on your system.
+**NOTE:** "R" is open source software freely available from the
+[R Project](http://www.R-project.org).
 
 ## Part 1: Read and Summarize data
 
