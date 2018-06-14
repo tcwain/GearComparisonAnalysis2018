@@ -37,7 +37,8 @@ This document presents full statistical results and describes the
 R code used to conduct the analysis in Wainwright et al.
 _"Effect of a mammal excluder device on catches of small pelagic fishes"_. 
 Data and scripts for the analysis are available in the R package 
-'GearComparisonAnalysis2018' available on GitHub at {{ADD LINK!}}.
+'GearComparisonAnalysis2018' available on 
+[GitHub](https://github.com/tcwain/GearComparisonAnalysis2018).
 
 **NOTE:** "R" is open source software freely available from the
 [R Project](http://www.R-project.org).
