@@ -33,15 +33,7 @@ knitr::opts_chunk$set(fig.width=6, fig.height=9, dpi=150,
                               width.cutoff=50))
 ```
 
-This document presents full statistical results and describes the 
-R code used to conduct the analysis in Wainwright et al.
-_"Effect of a mammal excluder device on catches of small pelagic fishes"_. 
-Data and scripts for the analysis are available in the R package 
-'GearComparisonAnalysis2018' available on 
-[GitHub](https://github.com/tcwain/GearComparisonAnalysis2018).
-
-**NOTE:** "R" is open source software freely available from the
-[R Project](http://www.R-project.org).
+Tests of new size-selectivity methods, primarily from Kotwicki et al. (2017, Fish. Res. 191:76-86).
 
 ## Part 1: Read and Summarize data
 
