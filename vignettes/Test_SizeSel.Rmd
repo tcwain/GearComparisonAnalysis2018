@@ -1,0 +1,271 @@
+---
+output: rmarkdown::pdf_document
+urlcolor: blue
+vignette: >
+  %\VignetteIndexEntry{"MED Gear Comparison Analysis"}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+MED Gear Comparison Analysis
+========================================================
+
+**Prepared by:** T.C. Wainwright, 
+Newport Research Station, Northwest Fisheries Science Center,
+National Marine Fisheries Service
+
+**Updated:** `r format(Sys.time(), '%d %h. %Y, %H:%M')`,
+using `r R.version.string`
+
+**NOTE:** This is a work of the U.S. Government and is not subject to
+copyright protection in the United States. Foreign copyrights may apply.
+
+**NOTE:** References throughout this document to trade names does not 
+imply endorsement by the National Marine Fisheries Service, NOAA.
+
+## Introduction
+
+```{r chunkOpts, echo=FALSE}
+knitr::opts_chunk$set(fig.width=6, fig.height=9, dpi=150, 
+               fig.show='as.is', warning=TRUE,
+               tidy.opts=list(keep.comment=TRUE, 
+                              keep.blank.line=TRUE, 
+                              width.cutoff=50))
+```
+
+This document presents full statistical results and describes the 
+R code used to conduct the analysis in Wainwright et al.
+_"Effect of a mammal excluder device on catches of small pelagic fishes"_. 
+Data and scripts for the analysis are available in the R package 
+'GearComparisonAnalysis2018' available on 
+[GitHub](https://github.com/tcwain/GearComparisonAnalysis2018).
+
+**NOTE:** "R" is open source software freely available from the
+[R Project](http://www.R-project.org).
+
+## Part 1: Read and Summarize data
+
+```{r file1, echo=FALSE}
+knitr::read_chunk(system.file('scripts', 'DataSummaryTables.R',
+                        package = "GearComparisonAnalysis2018"))
+```
+
+First, read in the data.
+
+```{r ReadData}
+```
+
+Fix some data problems. Create consistent haul numbers, filter out "experimental" hauls, and change Chinook and coho salmon "species" names to reflect age groups. Some species are renamed to make nicer plot labels, and months and times are recoded.
+
+```{r FixData}
+```
+
+Divide the hauls into analytic "blocks" which are combinations of Date X
+Location. There are 12 blocks ("A" through "L"), with the following number 
+of hauls in each:
+
+* May 2011: block A : 10, B : 10
+* July 2011: C : 4, D : 4, E : 10
+* Jun-Jul 2014: F : 4, G : 4, H : 8
+* July 2015: I : 8, J : 8, K : 8, L : 8
+
+```{r DefineBlocks}
+```
+
+Then, create a summary table of total catch by species and gear type 
+(None=="without MED", Down=="with downward MED", Up=="with upward MED"), ...
+
+```{r TotCatchBySpecies}
+```
+
+... and, do the same for frequency of catch.
+
+```{r FrequencyBySpecies}
+```
+
+Also, look at species by cruise to see which are "regularly caught." The final two columns give the number of cruises with nonzero catch ("Ngt0") and catch > 1 ("Ngt1") for each species.
+
+```{r SpeciesByCruise}
+```
+
+Examining these tables, for analysis we select the species that have total catch of at least 100 and occurred more than once in at least 3 cruises.
+
+```{r SelSpecies}
+```
+
+## Part2: Summary plots - CPUE by time
+
+```{r file2, echo=FALSE}
+knitr::read_chunk(system.file('scripts', 'DataSummaryPlots.R',
+                        package = "GearComparisonAnalysis2018"))
+```
+
+To estimate CPUE for each species in each haul, we need to convert the raw
+data that has counts by size into total counts for each species in each 
+haul, then we need to summarize effort.
+
+Generating the total catch summary is just a tabulation of numbers 
+by size:
+
+```{r TabCountsByHaulSpec}
+```
+
+Then, build a parallel structure of the haul data. This includes 
+location, date, time, effort (as distance towed), and gear information.
+
+```{r TabHaulData}
+```
+
+Finally, generate CPUE plots for selected species. 
+
+For this, we create an artificial "time" scale for plotting, creating equal 
+intervals within blocks. Then, CPUE is computed as counts for each species divided 
+by effort.
+
+```{r CPUECalcs}
+```
+
+Before running the analysis, set up some plotting configurations:
+
+```{r PlotSetup}
+```
+
+A special plotting function is created, so it can be re-used later.
+
+```{r CPUEPlotFnc}
+```
+
+Generate the individual plots:
+
+```{r DoCPUEPlots}
+```
+
+## Part 3: Size-selectivity analysis
+
+```{r file3, echo=FALSE}
+knitr::read_chunk(system.file('scripts', 'LenFreqComparison.R',
+                        package = "GearComparisonAnalysis2018"))
+```
+
+Because the two MED orientations were used in different years and locations, 
+we can't compare either MED to all the samples from the standard net, so we 
+separate this analysis into two groups: the upward MED tests in years 2011 & 
+2014, and the downward MED tests in 2015. 
+
+We analyze length-frequencies for the same set of species, but do not 
+subdivide salmon species by age group. To process the data, eliminate 
+records with no length measurements, clean up the list of species names, and
+bin them into 5 mm intervals for analysis.
+
+```{r GetLenFreqData}
+```
+
+Next, run the LF analysis for each species. First tabulate the distributions
+across all samples by species and gear type. Then, plot the LFs and 
+apply both a Wilcox-Mann-Whitney test and a Kolmogorov-Smirnov test for 
+gear differences. **NOTE** the several warnings that p-values are approximate 
+for the K-S test. We'll ignore the warnings, assume they're close enough as
+we're concerned with the patterns of size-selectivity, not significance tests.
+
+```{r LenFreqAnal, results='hold'}
+```
+
+## Part 4: Catch Ratio Statistics
+
+```{r file4, echo=FALSE}
+knitr::read_chunk(system.file('scripts', 'CatchRatioStats.R',
+                        package = "GearComparisonAnalysis2018"))
+```
+
+In preliminary analyses, we considered a number of methods, including:
+
+* _CPUE ratio estimate._
+Ratio of mean CPUEs (Wilderbuer et al. 1998, North. Am. J. Fish. Manage. 
+18:11-18) using bootstrapped quantiles rather than a normal approximation.
+
+* _Paired sample differences._ 
+This method uses paired t-test statistics with a log(x+offset) transform 
+on CPUE.
+
+* _Nonparametric paired differences._ 
+This method computes the median catch ratio and approximate binomial 
+quantiles based on eq. 10.3 in Efron (1982, _"The Jacknife, 
+the Bootstrap, and Other Resampling Plans"_) which finds the nearest 
+observation toward the tail from the nominal quantile.
+
+* _GLM analysis of deviance._
+This method computes a GLM blocked ANODEV model of 
+``Catch ~ Block + Gear + offset()`` with either a Poisson or a negative 
+binomial distribution, where the offset is the effort (km towed) for 
+each sample. (Because the model uses log links, including effort as an 
+offset is similar to using a linear model ``log(CPUE) ~ Block + Gear``.)
+
+After reviewing the methods, for the final analysis, we used only the GLM 
+method.
+
+### 4.1 The analysis
+
+To make the coding easier, we define standard names for the gear types, and 
+set the rounding parameters for easy-to-read results tables.
+
+```{r StatsSetup}
+```
+
+Then, create a function to compute the GLM estimates. The _R_ ``glm()`` 
+method does not support negative binomial distributions, 
+so we use the MASS library (Venables & Ripley 2002, 
+_"Modern Applied Statistics with S, 4th ed."_). The ``glm.nb()`` function is 
+used to estimate the $\theta$ parameter; if that estimation fails, it reverts
+to the value specified in "init.theta". Then (because ``glm.nb()`` fails 
+for some species) ``glm()`` is used with the estimated 
+$\theta$ to get the final statistics. This means that the distribution of the 
+final catch ratio estimate does not inlcude error in the estimation of $\theta$.
+
+The GLM model is on a log scale, so exponential transformations are 
+needed to get the catch-ratio estimate and quantiles. Predictions are 
+returned in ``$Pred`` for later plotting. 
+
+**NOTE** that we want the ratio MED/STD, so we use the negative of the 
+log-scale ``GearStd`` coefficient. 
+
+```{r NegBinAnoDevFnc}
+```
+
+Before running the analysis, create two summary lists: one for the means 
+and quantiles of all methods by species, and one for storing GLM model 
+results for plotting. The first list contains one element for each species,
+holding a matrix of summary results for estimates of the ratio _A_ by each 
+of the various estimation methods.  Rows are the methods, columns are a 
+six-number summary: Mean, Median, and quantiles(0.05, 0.25, 0.75, 0.95).
+
+The routine then loops through the species, computing first the GLM Poisson
+catch ratio estimates, then the GLM negative-binomial estimates. The 
+Poisson results are used to get a crude initial estimate of the neg-bin 
+$\Theta$ parameter, which is used to initiate the refined estimate via 
+``glm.nb()``. If the refined estimate fails, the initial estimate of 
+$\Theta$ is used instead. 
+
+```{r RunStats, fig.width=6, fig.height=3}
+```
+
+### 4.2 Summary of results
+
+Method abbreviations for the summary are:
+
+* GLM.Po - GLM blocked AnoDev with Poisson
+* GLM.nb - GLM blocked AnoDev with negative binomial
+
+```{r CRSummaryTable}
+```
+
+Next, generate summary figures of catch ratio estimates. In the plots, 
+the estimated mean is marked with "+" and the median with a diamond; 
+boxes span the quartiles, and whiskers extend to the 5% and 95% quantiles.
+
+```{r CRSummaryFig}
+```
+
+And a single panel summary of just the GLM.nb results for both excluder types.
+
+```{r GLMSummaryFig, fig.width=9, fig.height=6}
+```
