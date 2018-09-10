@@ -1,24 +1,25 @@
 #!/usr/bin/R
 
-#Plume Project -- Length-Frequency Comparison of MMED trawl
+#Plume Project -- Size-selectivity of MMED trawl
 #  comparisons Combined Data
 # Sampling described in RC Dotson etal 2010 NOAA-TM-NMFS-SWFSC-455,
 #  and NWFSC Plume Project cruise reports
 
 # data.dir <- '.'  #Directory where MMED data resides
 
-## ---- GetLenFreqData
+## ---- GetSizeData
 # Restrict to species selected above, but no age groups for salmon
 len.spec <- c("CHINOOK SALMON", "CHUM SALMON", "COHO SALMON",
              "MARKET SQUID", "NORTHERN ANCHOVY", "PACIFIC HERRING",
              "SEA NETTLE", "WATER JELLY")
-lenData <- MMEDdata[ , c("Cruise","MMED","Species","Length","Number")]
+lenData <- MMEDdata[ , c("Cruise","MMED","Species","Length",
+                         "Number","Distance","Haul")]
 lenData <- lenData[lenData$Species %in% len.spec, ]
 lenData <- lenData[!is.na(lenData$Length), ]
 lenData$Len5mm <- 5 * round(lenData$Length/5)
-## print(summary(lenData)) ### NOT RUN
+print(summary(lenData)) ### NOT RUN
 
-## ---- LenFreqAnal
+## ---- SizeSummary
 
 for (excl in c("Up","Down")) {
   cat('**************** Excluder: ', excl, ' *****************\n')
@@ -72,3 +73,64 @@ for (excl in c("Up","Down")) {
   mtext('Size (mm)', side=1, outer=TRUE, cex=1.5)
   mtext('Number Caught', side=2, outer=TRUE, cex=1.5)
 } # for (excl)
+
+## ---- SizeSelMethods
+
+# First, a function for each of three methods:
+# (klwg = "Kotwicki, Lauth, Williams, Goodman")
+klwg_GLMM <- function(sfdat) {
+  print("GLMM Not Yet Implemented")
+}
+
+klwg_SCMM <- function(sfdat) {
+  NumTotL <- with(sfdat, tapply(Number, list(Length, MMED), sum, na.rm=TRUE))
+  print(dim(NumTotL))   ### DEBUG ###
+  EffTotL <- with(sfdat, tapply(Distance, list(Length, MMED),sum, na.rm=TRUE))
+  print(dim(EffTotL))   ### DEBUG ###
+  cpue <- NumTotL/EffTotL
+  print(summary(cpue))   ### DEBUG ###
+  print("SCMM Not Yet Implemented")
+}
+
+klwg_BetaR <- function(sfdat) {
+  print("BetaR Not Yet Implemented")
+}
+
+## ---- SizeSelAnal
+for (excl in c("Up","Down")) {
+  cat('**************** Excluder: ', excl, ' *****************\n')
+  lD <- if(excl %in% "Up") {
+    lenData[lenData$Cruise %in% c(41,43,50), ]
+  } else {
+    lenData[lenData$Cruise %in% 53, ]
+  }
+  lD$Species <- factor(as.character(lD$Species))
+  .tab <- with(lD, tapply(Number, list(Species), sum, na.rm=T))
+  print(.tab)
+  lf.sel.spec <- names(.tab)[.tab >= 100]
+  lenFreq <- with(lD, tapply(Number, list(Len5mm, MMED, Species), sum))
+  .mfrow <- if(lndscp) c(3,3) else c(3,2)
+  par(mfrow=.mfrow, omi=c(0.5,0.5,0,0), mar=c(3,3,2,1))
+  for (sp in lf.sel.spec) {
+    cat('****************', sp, '*****************\n')
+    if (sp %in% dimnames(lenFreq)[[3]]) {
+      .dat <- lenFreq[ , , sp]
+      .len <- lD[lD$Species %in% sp, ]
+      .len.std <- .len[.len$MMED=='None', ]
+      .len.mmed <- .len[.len$MMED==excl, ]
+      .x <- rep(.len.std$Length, .len.std$Number)
+      .y <- rep(.len.mmed$Length, .len.mmed$Number)
+      if ((length(.x) > 10) & (length(.y) > 10)) {
+        glmm <- klwg_GLMM(sfdat=.len)
+        scmm <- klwg_SCMM(sfdat=.len)
+        beta <- klwg_BetaR(sfdat=.len)
+      } else {
+        cat('\n Insufficient data \n')
+      } # if (length...)
+    } else {
+      cat('\n\tNO LENGTH DATA FOR ', sp, '\n')
+    } # if (sp %in% ...)
+  } # for(sp)
+} # for (excl)
+
+# Implementation of "double-bootstrap"
