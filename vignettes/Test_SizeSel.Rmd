@@ -144,22 +144,26 @@ we can't compare either MED to all the samples from the standard net, so we
 separate this analysis into two groups: the upward MED tests in years 2011 & 
 2014, and the downward MED tests in 2015. 
 
-We analyze length-frequencies for the same set of species, but do not 
+We analyze size-frequencies for the same set of species, but do not 
 subdivide salmon species by age group. To process the data, eliminate 
-records with no length measurements, clean up the list of species names, and
+records with no size measurements, clean up the list of species names, and
 bin them into 5 mm intervals for analysis.
 
-```{r GetLenFreqData}
+```{r GetSizeData}
 ```
 
-Next, run the LF analysis for each species. First tabulate the distributions
-across all samples by species and gear type. Then, plot the LFs and 
+Next, run the Size-Frequency (SF) analysis for each species. First tabulate the distributions
+across all samples by species and gear type. Then, plot the SFs and 
 apply both a Wilcox-Mann-Whitney test and a Kolmogorov-Smirnov test for 
 gear differences. **NOTE** the several warnings that p-values are approximate 
 for the K-S test. We'll ignore the warnings, assume they're close enough as
 we're concerned with the patterns of size-selectivity, not significance tests.
 
-```{r LenFreqAnal, results='hold'}
+```{r SizeSummary, results='hold'}
+```
+
+Then, conduct full gear Size-Selectivity Analysis, as in Kotwicki et al. (2017, Fish. Res. 191:76-86). We use their approach # 1 (their equations 1-4), where effort data is available and comparable between gears, so size distributions are compared on the basis of CPUE. Their equations assume a paired-trawl or split-trawl experimental design, so adjustments must be made for our stratified design.
+```{r SizeSelAnal, results='hold'}
 ```
 
 ## Part 4: Catch Ratio Statistics
@@ -200,7 +204,7 @@ method.
 To make the coding easier, we define standard names for the gear types, and 
 set the rounding parameters for easy-to-read results tables.
 
-```{r StatsSetup}
+```{r StatsSetup, eval=FALSE}
 ```
 
 Then, create a function to compute the GLM estimates. The _R_ ``glm()`` 
@@ -220,7 +224,7 @@ returned in ``$Pred`` for later plotting.
 **NOTE** that we want the ratio MED/STD, so we use the negative of the 
 log-scale ``GearStd`` coefficient. 
 
-```{r NegBinAnoDevFnc}
+```{r NegBinAnoDevFnc, eval=FALSE}
 ```
 
 Before running the analysis, create two summary lists: one for the means 
@@ -237,7 +241,7 @@ $\Theta$ parameter, which is used to initiate the refined estimate via
 ``glm.nb()``. If the refined estimate fails, the initial estimate of 
 $\Theta$ is used instead. 
 
-```{r RunStats, fig.width=6, fig.height=3}
+```{r RunStats, fig.width=6, fig.height=3, eval=FALSE}
 ```
 
 ### 4.2 Summary of results
@@ -247,17 +251,17 @@ Method abbreviations for the summary are:
 * GLM.Po - GLM blocked AnoDev with Poisson
 * GLM.nb - GLM blocked AnoDev with negative binomial
 
-```{r CRSummaryTable}
+```{r CRSummaryTable, eval=FALSE}
 ```
 
 Next, generate summary figures of catch ratio estimates. In the plots, 
 the estimated mean is marked with "+" and the median with a diamond; 
 boxes span the quartiles, and whiskers extend to the 5% and 95% quantiles.
 
-```{r CRSummaryFig}
+```{r CRSummaryFig, eval=FALSE}
 ```
 
 And a single panel summary of just the GLM.nb results for both excluder types.
 
-```{r GLMSummaryFig, fig.width=9, fig.height=6}
+```{r GLMSummaryFig, fig.width=9, fig.height=6, eval=FALSE}
 ```

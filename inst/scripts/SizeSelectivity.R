@@ -1,24 +1,25 @@
 #!/usr/bin/R
 
-#Plume Project -- Length-Frequency Comparison of MMED trawl
+#Plume Project -- Size-selectivity of MMED trawl
 #  comparisons Combined Data
 # Sampling described in RC Dotson etal 2010 NOAA-TM-NMFS-SWFSC-455,
 #  and NWFSC Plume Project cruise reports
 
 # data.dir <- '.'  #Directory where MMED data resides
 
-## ---- GetLenFreqData
+## ---- GetSizeData
 # Restrict to species selected above, but no age groups for salmon
 len.spec <- c("CHINOOK SALMON", "CHUM SALMON", "COHO SALMON",
              "MARKET SQUID", "NORTHERN ANCHOVY", "PACIFIC HERRING",
              "SEA NETTLE", "WATER JELLY")
-lenData <- MMEDdata[ , c("Cruise","MMED","Species","Length","Number")]
+lenData <- MMEDdata[ , c("Cruise","MMED","Species","Length",
+                         "Number","Distance","Haul")]
 lenData <- lenData[lenData$Species %in% len.spec, ]
 lenData <- lenData[!is.na(lenData$Length), ]
 lenData$Len5mm <- 5 * round(lenData$Length/5)
-## print(summary(lenData)) ### NOT RUN
+print(summary(lenData)) ### NOT RUN
 
-## ---- LenFreqAnal
+## ---- SizeSummary
 
 for (excl in c("Up","Down")) {
   cat('**************** Excluder: ', excl, ' *****************\n')
@@ -72,3 +73,21 @@ for (excl in c("Up","Down")) {
   mtext('Size (mm)', side=1, outer=TRUE, cex=1.5)
   mtext('Number Caught', side=2, outer=TRUE, cex=1.5)
 } # for (excl)
+
+## ---- SizeSelAnal
+
+# First, a function for each of three methods:
+# (klwg = "Kotwicki, Lauth, Williams, Goodman")
+klwg_GLMM <- function(sfdat, params) {
+  print("Not Yet Implemented")
+}
+
+klwg_SCMM <- function(sfdat, params) {
+  print("Not Yet Implemented")
+}
+
+klwg_BetaR <- function(sfdat, params) {
+  print("Not Yet Implemented")
+}
+
+# Implementation of "double-bootstrap"
