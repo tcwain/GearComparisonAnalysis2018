@@ -135,7 +135,7 @@ Generate the individual plots:
 ## Part 3: Size-selectivity analysis
 
 ```{r file3, echo=FALSE}
-knitr::read_chunk(system.file('scripts', 'LenFreqComparison.R',
+knitr::read_chunk(system.file('scripts', 'SizeSelectivity.R',
                         package = "GearComparisonAnalysis2018"))
 ```
 
