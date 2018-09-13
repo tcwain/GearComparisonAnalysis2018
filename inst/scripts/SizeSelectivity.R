@@ -84,12 +84,24 @@ klwg_GLMM <- function(sfdat) {
 
 klwg_SCMM <- function(sfdat) {
   NumTotL <- with(sfdat, tapply(Number, list(Length, MMED), sum, na.rm=TRUE))
-  print(dim(NumTotL))   ### DEBUG ###
+##  print(dim(NumTotL))   ### DEBUG ###
   EffTotL <- with(sfdat, tapply(Distance, list(Length, MMED),sum, na.rm=TRUE))
-  print(dim(EffTotL))   ### DEBUG ###
+##  print(dim(EffTotL))   ### DEBUG ###
   cpue <- NumTotL/EffTotL
-  print(summary(cpue))   ### DEBUG ###
-  print("SCMM Not Yet Implemented")
+  cpue[is.na(cpue)] <- 0
+##  print(summary(cpue))   ### DEBUG ###
+  std <- cpue[ , 1]
+  tst <- cpue[ , 2]
+  wts <- std + tst
+##  print(wts)    ### DEBUG ###
+  p.L12 <- std / (std + tst)
+  p.L12 <- p.L12[!is.na(p.L12)]
+  wts <- wts[!is.na(wts)]
+##  print(p.L12)   ### DEBUG ###
+  L <- as.numeric(names(p.L12))
+  res <- mgcv::gam(p.L12 ~ s(L, bs="cr"), family=binomial, weights=wts)
+  print("SCMM Not Complete")
+  return(res)
 }
 
 klwg_BetaR <- function(sfdat) {
@@ -108,9 +120,10 @@ for (excl in c("Up","Down")) {
   .tab <- with(lD, tapply(Number, list(Species), sum, na.rm=T))
   print(.tab)
   lf.sel.spec <- names(.tab)[.tab >= 100]
-  lenFreq <- with(lD, tapply(Number, list(Len5mm, MMED, Species), sum))
+  lenFreq <- with(lD, tapply(Number, list(Len5mm, MMED, Species), sum, na.rm=TRUE))
   .mfrow <- if(lndscp) c(3,3) else c(3,2)
   par(mfrow=.mfrow, omi=c(0.5,0.5,0,0), mar=c(3,3,2,1))
+  ## for(sp in c("COHO SALMON")) {       ### TESTING ###
   for (sp in lf.sel.spec) {
     cat('****************', sp, '*****************\n')
     if (sp %in% dimnames(lenFreq)[[3]]) {
@@ -123,6 +136,13 @@ for (excl in c("Up","Down")) {
       if ((length(.x) > 10) & (length(.y) > 10)) {
         glmm <- klwg_GLMM(sfdat=.len)
         scmm <- klwg_SCMM(sfdat=.len)
+        pred <- predict(scmm, type="response", se.fit=TRUE)
+        plot(scmm$model$L, scmm$model$p.L12, col="blue",
+                        main=paste(sp, ":", excl))
+        abline(h=0.5, col="red")
+        lines(scmm$model$L, pred$fit)
+        lines(scmm$model$L, pred$fit + 2*pred$se.fit, lty=2)
+        lines(scmm$model$L, pred$fit - 2*pred$se.fit, lty=2)
         beta <- klwg_BetaR(sfdat=.len)
       } else {
         cat('\n Insufficient data \n')

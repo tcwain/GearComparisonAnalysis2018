@@ -168,7 +168,7 @@ First, we define functions for each of the methods:
 ```{r SizeSelMethods, results='hold'}
 ```
 
-```{r SizeSelAnal, results='hold'}
+```{r SizeSelAnal, results='hold', warning=FALSE}
 ```
 
 ## Part 4: Catch Ratio Statistics
