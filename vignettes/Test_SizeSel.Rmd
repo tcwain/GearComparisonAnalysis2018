@@ -26,7 +26,7 @@ imply endorsement by the National Marine Fisheries Service, NOAA.
 ## Introduction
 
 ```{r chunkOpts, echo=FALSE}
-knitr::opts_chunk$set(fig.width=6, fig.height=9, dpi=150, 
+knitr::opts_chunk$set(fig.width=7, fig.height=9, dpi=150, 
                fig.show='as.is', warning=TRUE,
                tidy.opts=list(keep.comment=TRUE, 
                               keep.blank.line=TRUE, 
