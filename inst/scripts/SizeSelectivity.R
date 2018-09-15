@@ -27,13 +27,13 @@ meas <- as.data.frame(meas)
 ## print(summary(meas)) ### DEBUG ###
 # Subsampling ratio by Haul & Species:
 ssr <- meas / cnt
-print(summary(ssr)) ### DEBUG ###
+##print(summary(ssr)) ### DEBUG ###
 # Adjusted Numbers (expanded by ssr)
 lenData <- lenData[!is.na(lenData$Length), ] #remove non-measured counts
 lenData$AdjNum <- lenData$Number / unlist(apply(lenData[c("Haul","Species")], 1,
                   function(x){ssr[x["Haul"], x["Species"]]}))
 lenData <- lenData[lenData$Species %in% len.spec, ]
-##lenData <- lenData[!is.na(lenData$Length), ] #misses some fish for cpue
+lenData <- lenData[!is.na(lenData$Length), ] #Already accounted for in AdjNum
 # Length bin size (mm)
 binsize <- 5
 lenData$LenBin <- binsize * round(lenData$Length/binsize)
@@ -98,9 +98,9 @@ for (excl in c("Up","Down")) {
 
 # First, a function for each of three methods:
 # (klwg = "Kotwicki, Lauth, Williams, Goodman")
-klwg_GLMM <- function(sfdat) {
-  print("GLMM Not Yet Implemented")
-}
+# klwg_GLMM <- function(sfdat) {
+#   print("GLMM Not Yet Implemented")
+# }
 
 klwg_SCMM <- function(sfdat) {
   NumTotL <- with(sfdat, tapply(AdjNum, list(LenBin, MMED), sum, na.rm=TRUE))
@@ -109,26 +109,27 @@ klwg_SCMM <- function(sfdat) {
 ##  print(dim(EffTotL))   ### DEBUG ###
   cpue <- NumTotL/EffTotL
   cpue[is.na(cpue)] <- 0
-##  print(summary(cpue))   ### DEBUG ###
+  ##print(summary(cpue))   ### DEBUG ###
   std <- cpue[ , 1]
   tst <- cpue[ , 2]
-  wts <- std + tst
-##  print(wts)    ### DEBUG ###
+  # Binomial weights based on number measured in both gears:
+  Nmeas <- with(sfdat, tapply(Number, list(LenBin, MMED), sum, na.rm=TRUE))
+  wts <- Nmeas[ , 1] + Nmeas[ , 2]
+  ##print(summary(wts))    ### DEBUG ###
   p.L12 <- std / (std + tst)
-  p.L12 <- p.L12[!is.na(p.L12)]
-  wts <- wts[!is.na(wts)]
-##  print(p.L12)   ### DEBUG ###
+  ##p.L12 <- p.L12[!is.na(p.L12)]
+  ##print(summary(p.L12))   ### DEBUG ###
+  ##wts <- wts[!is.na(wts)]
   L <- as.numeric(names(p.L12))
   old.opt <- options(warn = -1) # suppress warnings about non-integer weights
-  res <- mgcv::gam(p.L12 ~ s(L, bs="cr"), family=binomial, weights=wts)
+  res <- mgcv::gam(p.L12 ~ s(L, bs="cr", k=5), family=binomial, weights=wts)
   options(old.opt)
-  print("SCMM Not Complete")
   return(res)
 }
 
-klwg_BetaR <- function(sfdat) {
-  print("BetaR Not Yet Implemented")
-}
+# klwg_BetaR <- function(sfdat) {
+#   print("BetaR Not Yet Implemented")
+# }
 
 ## ---- SizeSelAnal
 for (excl in c("Up","Down")) {
@@ -143,6 +144,8 @@ for (excl in c("Up","Down")) {
   print(.tab)
   lf.sel.spec <- names(.tab)[.tab >= 100]
   lenFreq <- with(lD, tapply(AdjNum, list(LenBin, MMED, Species), sum, na.rm=TRUE))
+  lenFreq[is.na(lenFreq)] <- 0
+  ##print(summary(lenFreq))    ### DEBUG ###
   .mfrow <- if(lndscp) c(3,3) else c(3,2)
   par(mfrow=.mfrow, omi=c(0.5,0.5,0,0.5), mar=c(3,3,2,3))
   ##for(sp in c("COHO SALMON")) {       ### TESTING ###
@@ -156,11 +159,15 @@ for (excl in c("Up","Down")) {
       .maxL <- max(.len$Length, na.rm=T)
       .minL <- min(.len$Length, na.rm=T)
       .len.std <- .len[.len$MMED=='None', ]
+      ##print(.len.std)     ### DEBUG ###
       .len.mmed <- .len[.len$MMED==excl, ]
-      .x <- rep(.len.std$LenBin, .len.std$Number)
-      .y <- rep(.len.mmed$LenBin, .len.mmed$Number)
-      if ((sum(!is.na(.x)) > 10) & (sum(!is.na(.y)) > 10)) {
-        glmm <- klwg_GLMM(sfdat=.len)
+      .x <- sum(.len.std$Number)
+      ##print(.x)     ### DEBUG ###
+      .y <- sum(.len.mmed$Number)
+      ##print(.y)     ### DEBUG ###
+      if ((.x > 40) & (.y > 40)) {
+      ##if ((length(!is.na(.x)) > 40) & (length(!is.na(.y)) > 40)) {
+        ##glmm <- klwg_GLMM(sfdat=.len)
         scmm <- klwg_SCMM(sfdat=.len)
         print(summary(scmm))
         L.pred <- seq(.minL, .maxL, binsize)
@@ -195,7 +202,7 @@ for (excl in c("Up","Down")) {
         # abline(h=1.0, col="red")
         lines(L.pred, CR.UL, lty=2, lwd=2)
         lines(L.pred, CR.LL, lty=2, lwd=2)
-        beta <- klwg_BetaR(sfdat=.len)
+        ##beta <- klwg_BetaR(sfdat=.len)
       } else {
         cat('\n Insufficient data \n')
       } # if (length...)
