@@ -7,10 +7,11 @@
 
 ## ---- TabCountsByHaulSpec
 
+# Total number by Haul (rows) and Species
 MMEDcnt <- with (MMEDdata, tapply(Number, list(Haul, SpecAge), FUN=sum, simplify=T))
 MMEDcnt[is.na(MMEDcnt)] <- 0
 MMEDcnt <- as.data.frame(MMEDcnt)
-## print(summary(MMEDcnt)) ### NOT RUN
+## print(summary(MMEDcnt)) ### DEBUG ###
 
 ## ---- TabHaulData
 
@@ -18,7 +19,7 @@ MMEDhauls <- data.frame(HaulID = rownames(MMEDcnt))
 MMEDhauls$Station <- with(MMEDdata, tapply(as.character(Station), list(Haul), FUN=unique))
 MMEDhauls$Date <- with(MMEDdata,  tapply(as.character(Date), list(Haul), FUN=unique))
 MMEDhauls$Effort <- with(MMEDdata, tapply(Distance, list(Haul), FUN=unique))
-MMEDhauls$Gear <- factor(with(MMEDdata, tapply(as.character(MMED), list(Haul), FUN=unique)), 
+MMEDhauls$Gear <- factor(with(MMEDdata, tapply(as.character(MMED), list(Haul), FUN=unique)),
                             levels=c('None','Up','Down'))
 MMEDhauls$Block <- with(MMEDdata, tapply(as.character(Block), list(Haul), FUN=unique))
 
@@ -27,9 +28,9 @@ MMEDhauls$Block <- with(MMEDdata, tapply(as.character(Block), list(Haul), FUN=un
 MMEDhauls$PlotTime <- match(MMEDhauls$Block, LETTERS[1:13]) - 1 +
   c((1:10)/11, (1:10)/11, (1:4)/5, (1:4)/5, (1:10)/11, (1:4)/5, (1:4)/5, (1:8)/9,
     (1:8)/9, (1:8)/9, (1:4)/5, (1:4)/5, (1:8)/9)
-## print(summary(MMEDhauls)) ### NOT RUN
+## print(summary(MMEDhauls)) ### DEBUG ###
 MMEDcpue=sweep(MMEDcnt, 1, MMEDhauls$Effort, '/')
-## print(summary(MMEDcpue)) ### NOT RUN
+## print(summary(MMEDcpue)) ### DEBUG ###
 
 ## ---- PlotSetup
 
@@ -72,8 +73,8 @@ cpue.plot <- function(t, y, dot.col=1, log.zero=FALSE, ...) {
 
 par(mfrow=c(ceiling(length(sel.spec)/plcol), plcol), omi=c(0.5,0.5,0,0), mar=c(3,2,2,1))
 for (sp in sel.spec) {
-  cpue.plot(MMEDhauls$PlotTime, MMEDcpue[[sp]], log.zero=TRUE, 
-            col=c(BLACK,RED,BLUE)[as.numeric(MMEDhauls$Gear)], 
+  cpue.plot(MMEDhauls$PlotTime, MMEDcpue[[sp]], log.zero=TRUE,
+            col=c(BLACK,RED,BLUE)[as.numeric(MMEDhauls$Gear)],
             pch=1+4*(MMEDhauls$Gear!='None'), xlab="", ylab="", main=sp)
 } # for (sp)
 mtext('Survey Block', side=1, outer=TRUE, cex=1.5)

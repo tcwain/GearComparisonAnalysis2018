@@ -14,12 +14,30 @@ len.spec <- c("CHINOOK SALMON", "CHUM SALMON", "COHO SALMON",
              "SEA NETTLE", "WATER JELLY")
 lenData <- MMEDdata[ , c("Cruise","MMED","Species","Length",
                          "Number","Distance","Haul")]
+# Add subsample ratio:
+# Total number by Haul (rows) and Species
+cnt <- with (lenData, tapply(Number, list(Haul, Species), FUN=sum, simplify=T))
+cnt[is.na(cnt)] <- 0
+cnt <- as.data.frame(cnt)
+## print(summary(cnt)) ### DEBUG ###
+# Total measured by Haul & species
+meas <- with(lenData, tapply(!is.na(Length), list(Haul, Species), FUN=sum, simplify=T))
+meas[is.na(meas)] <- 0
+meas <- as.data.frame(meas)
+## print(summary(meas)) ### DEBUG ###
+# Subsampling ratio by Haul & Species:
+ssr <- meas / cnt
+print(summary(ssr)) ### DEBUG ###
+# Adjusted Numbers (expanded by ssr)
+lenData <- lenData[!is.na(lenData$Length), ] #remove non-measured counts
+lenData$AdjNum <- lenData$Number / unlist(apply(lenData[c("Haul","Species")], 1,
+                  function(x){ssr[x["Haul"], x["Species"]]}))
 lenData <- lenData[lenData$Species %in% len.spec, ]
-lenData <- lenData[!is.na(lenData$Length), ]
+##lenData <- lenData[!is.na(lenData$Length), ] #misses some fish for cpue
 # Length bin size (mm)
 binsize <- 5
 lenData$LenBin <- binsize * round(lenData$Length/binsize)
-print(summary(lenData)) ### NOT RUN
+print(summary(lenData)) ### DEBUG ###
 
 ## ---- SizeSummary
 
@@ -85,7 +103,7 @@ klwg_GLMM <- function(sfdat) {
 }
 
 klwg_SCMM <- function(sfdat) {
-  NumTotL <- with(sfdat, tapply(Number, list(LenBin, MMED), sum, na.rm=TRUE))
+  NumTotL <- with(sfdat, tapply(AdjNum, list(LenBin, MMED), sum, na.rm=TRUE))
 ##  print(dim(NumTotL))   ### DEBUG ###
   EffTotL <- with(sfdat, tapply(Distance, list(LenBin, MMED),sum, na.rm=TRUE))
 ##  print(dim(EffTotL))   ### DEBUG ###
@@ -101,7 +119,9 @@ klwg_SCMM <- function(sfdat) {
   wts <- wts[!is.na(wts)]
 ##  print(p.L12)   ### DEBUG ###
   L <- as.numeric(names(p.L12))
+  old.opt <- options(warn = -1) # suppress warnings about non-integer weights
   res <- mgcv::gam(p.L12 ~ s(L, bs="cr"), family=binomial, weights=wts)
+  options(old.opt)
   print("SCMM Not Complete")
   return(res)
 }
@@ -119,10 +139,10 @@ for (excl in c("Up","Down")) {
     lenData[lenData$Cruise %in% 53, ]
   }
   lD$Species <- factor(as.character(lD$Species))
-  .tab <- with(lD, tapply(Number, list(Species), sum, na.rm=T))
+  .tab <- with(lD, tapply(AdjNum, list(Species), sum, na.rm=T))
   print(.tab)
   lf.sel.spec <- names(.tab)[.tab >= 100]
-  lenFreq <- with(lD, tapply(Number, list(LenBin, MMED, Species), sum, na.rm=TRUE))
+  lenFreq <- with(lD, tapply(AdjNum, list(LenBin, MMED, Species), sum, na.rm=TRUE))
   .mfrow <- if(lndscp) c(3,3) else c(3,2)
   par(mfrow=.mfrow, omi=c(0.5,0.5,0,0.5), mar=c(3,3,2,3))
   ##for(sp in c("COHO SALMON")) {       ### TESTING ###
@@ -139,7 +159,7 @@ for (excl in c("Up","Down")) {
       .len.mmed <- .len[.len$MMED==excl, ]
       .x <- rep(.len.std$LenBin, .len.std$Number)
       .y <- rep(.len.mmed$LenBin, .len.mmed$Number)
-      if ((length(.x) > 10) & (length(.y) > 10)) {
+      if ((sum(!is.na(.x)) > 10) & (sum(!is.na(.y)) > 10)) {
         glmm <- klwg_GLMM(sfdat=.len)
         scmm <- klwg_SCMM(sfdat=.len)
         print(summary(scmm))
@@ -155,14 +175,14 @@ for (excl in c("Up","Down")) {
         CR.UL[CR.UL > 1000] <- 1000 #recode infinite values
         CR.LL <- 1/p.UL - 1
         CR.LL[CR.LL < 0.001] <- 0.001 # recode zeros for log plot
-        plot(as.numeric(rownames(.dat)), .dat[, 'None'], type='h', col=BLACK, lwd=1,
+        plot(as.numeric(rownames(.dat)), -.dat[, 'None'], type='h', col=BLACK, lwd=1,
              xlim=c(.minL,.maxL), ylim=c(-.maxN,.maxN), axes=F,
              xlab='', ylab='')
         box()
         axis(side=1, lwd=0, lwd.ticks=1)
         axis(side=2, at=pretty(c(-max(.dat,na.rm=T),max(.dat,na.rm=T))),
              labels=abs(pretty(c(-max(.dat,na.rm=T),max(.dat,na.rm=T)))))
-        points(as.numeric(rownames(.dat)), -.dat[, excl], type='h',
+        points(as.numeric(rownames(.dat)), .dat[, excl], type='h',
                col={if(excl %in% "Up") RED else BLUE}, lwd=1)
         mtext(sp, side=3, cex=0.75, line=0)
         abline(h=0, lwd=1)
