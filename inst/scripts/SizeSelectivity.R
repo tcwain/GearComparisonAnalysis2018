@@ -98,8 +98,10 @@ for (excl in c("Up","Down")) {
 
 boot_SCMM <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
   fit.model <- function(sdat) {
-    NumTotL <- with(sdat, tapply(AdjNum, list(LenBin, MMED), sum, na.rm=TRUE))
-    EffTotL <- with(sdat, tapply(Distance, list(LenBin, MMED),sum, na.rm=TRUE))
+    NumTotL <- with(sdat, tapply(AdjNum, list(LenBin, MMED), sum,
+                                 na.rm=TRUE, default=0))
+    EffTotL <- with(sdat, tapply(Distance, list(LenBin, MMED),sum,
+                                 na.rm=TRUE, default=0))
     cpue <- NumTotL/EffTotL
     cpue[is.na(cpue)] <- 0
     ##print(summary(cpue))  ### DEBUG ###
@@ -141,7 +143,24 @@ boot_SCMM <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
     for (h in hauls.samp) {
       .hdata <- sdat[sdat$Haul == h, ]
       # TODO: resample lengths within haul
-      .data <- rbind(.data, .hdata)
+      ##print(summary(.hdata))  ### DEBUG ###
+      ssr <- with(.hdata, sum(Number)/sum(AdjNum)) # subsample rate
+      L.ex <- with(.hdata, rep(LenBin, Number))  #expand Number to indiv. lengths
+      if(length(L.ex) > 1) {
+        L.smp <- sample(L.ex, length(L.ex), replace=TRUE)  #resample lengths
+      } else {
+        L.smp <- L.ex  # sample() doesn't work for length 1 vector
+      }
+      new.freq <- as.data.frame(table(L.smp))
+      ##print(new.freq)  ### DEBUG ###
+      .ndata <- data.frame(MMED=unique(.hdata$MMED),
+                           Haul=unique(.hdata$Haul),
+                           Distance=mean(.hdata$Distance),
+                           LenBin=as.numeric(levels(new.freq$L.smp)),
+                           Number=new.freq$Freq,
+                           AdjNum=new.freq$Freq/ssr)
+      ##print(summary(.ndata))  ### DEBUG ###
+      .data <- rbind(.data, .ndata)
     } # for (h)
     names(.data) <- names(sdat)
     ##print(summary(.data))   ### DEBUG ###
@@ -186,9 +205,10 @@ for (excl in c("Up","Down")) {
       .dat <- lenFreq[ , , sp]
       .maxN <- max(.dat,na.rm=T)
       ##print(.dat)     ### DEBUG ###
-      .len <- lD[lD$Species %in% sp, ]
-      .maxL <- max(.len$Length, na.rm=T)
-      .minL <- min(.len$Length, na.rm=T)
+      .len <- lD[lD$Species %in% sp,
+                 c("MMED", "Haul", "Distance", "LenBin", "Number", "AdjNum")]
+      .maxL <- max(.len$LenBin, na.rm=T)
+      .minL <- min(.len$LenBin, na.rm=T)
       .len.std <- .len[.len$MMED=='None', ]
       ##print(.len.std)     ### DEBUG ###
       .len.mmed <- .len[.len$MMED==excl, ]
@@ -199,19 +219,16 @@ for (excl in c("Up","Down")) {
       if ((.x > 40) & (.y > 40)) {
       ##if ((length(!is.na(.x)) > 40) & (length(!is.na(.y)) > 40)) {
         scmm <- boot_SCMM(sdat=.len, nrep=1000, binsz=binsize)
+        cat("\tSummary of GAM fit: \n")
         print(summary(scmm$gam))
-        print(summary(scmm$boot.sum))   ### DEBUG ###
+        cat("\tSummary of bootstrap fits: \n")
+        print(summary(scmm$boot.sum))
         p.pred <- scmm$pred
         L.pred <- as.numeric(names(p.pred))
-        ##p.UL <- p.pred + 1.96*pred$se.fit
-        ##p.LL <- p.pred - 1.96*pred$se.fit
+        # Convert probability to Catch Ratio:
         CR.obs <- 1/scmm$gam$model$p.L12 - 1
         CR.pred <- 1/p.pred - 1
-        ##CR.UL <- 1/p.LL - 1
-        ##CR.UL[CR.UL > 1000] <- 1000 #recode infinite values
-        ##CR.LL <- 1/p.UL - 1
-        ##CR.LL[CR.LL < 0.001] <- 0.001 # recode zeros for log plot
-        CR.boot <- 1/scmm$boot.sum - 1  # Convert bootstrap values from p to CR
+        CR.boot <- 1/scmm$boot.sum - 1
         CR.boot[CR.boot > 1000] <- 1000 #recode infinite values
         CR.boot[CR.boot < 1/1000] <- 1/1000 #recode zero values
         plot(as.numeric(rownames(.dat)), -.dat[, 'None'], type='h', col=BLACK, lwd=1,
@@ -232,11 +249,9 @@ for (excl in c("Up","Down")) {
         axis(side=4, at=c(0.02, 0.2, 1, 5, 50),
              labels=c("0.02", "0.2", "1", "5", "50"))
         # abline(h=1.0, col="red")
-        ##lines(L.pred, CR.UL, lty=2, lwd=2)
-        ##lines(L.pred, CR.LL, lty=2, lwd=2)
-        lines(L.pred, CR.boot[ ,"q.50."], lty=1, lwd=2, col="magenta") # bs median
-        lines(L.pred, CR.boot[ ,"q.5."], lty=2, lwd=2) # bs lower 5%
-        lines(L.pred, CR.boot[ ,"q.95."], lty=2, lwd=2) # bs upper 5%
+        lines(L.pred, CR.boot[ , "q.50."], lty=2, lwd=2) # bs median
+        lines(L.pred, CR.boot[ , "q.5."], lty=3, lwd=2) # bs lower 5%
+        lines(L.pred, CR.boot[ , "q.95."], lty=3, lwd=2) # bs upper 5%
         ### DEBUG: ###
         # print(scmm$gam$model)
         # plot(scmm$gam$model$L, scmm$gam$model$p.L12, col="blue", ylim=c(-0.1,1.1))
