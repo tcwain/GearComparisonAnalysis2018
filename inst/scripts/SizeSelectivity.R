@@ -96,40 +96,71 @@ for (excl in c("Up","Down")) {
 
 ## ---- SizeSelMethods
 
-# First, a function for each of three methods:
-# (klwg = "Kotwicki, Lauth, Williams, Goodman")
-# klwg_GLMM <- function(sfdat) {
-#   print("GLMM Not Yet Implemented")
-# }
+boot_SCMM <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
+  fit.model <- function(sdat) {
+    NumTotL <- with(sdat, tapply(AdjNum, list(LenBin, MMED), sum, na.rm=TRUE))
+    EffTotL <- with(sdat, tapply(Distance, list(LenBin, MMED),sum, na.rm=TRUE))
+    cpue <- NumTotL/EffTotL
+    cpue[is.na(cpue)] <- 0
+    ##print(summary(cpue))  ### DEBUG ###
+    std <- cpue[ , 1]
+    tst <- cpue[ , 2]
+    p.L12 <- std / (std + tst)
+    ##print(summary(p.L12))   ### DEBUG ###
+    # Binomial weights based on number measured in both gears:
+    Nmeas <- with(sdat, tapply(Number, list(LenBin, MMED), sum,
+                               na.rm=TRUE, default=0))
+    ##print(Nmeas)  ### DEBUG ###
+    wts <- Nmeas[ , 1] + Nmeas[ , 2]
+    ##print(summary(wts))  ### DEBUG ###
+    L <- as.numeric(names(p.L12))
+    ##print(summary(L))   ### DEBUG ###
+    old.opt <- options(warn = -1) # suppress warnings about non-integer values
+    fit.gam <- mgcv::gam(p.L12 ~ s(L, bs="cr", k=5), family=binomial, weights=wts)
+    options(old.opt)
+    return(fit.gam)
+  } # fit.model()
 
-klwg_SCMM <- function(sfdat) {
-  NumTotL <- with(sfdat, tapply(AdjNum, list(LenBin, MMED), sum, na.rm=TRUE))
-##  print(dim(NumTotL))   ### DEBUG ###
-  EffTotL <- with(sfdat, tapply(Distance, list(LenBin, MMED),sum, na.rm=TRUE))
-##  print(dim(EffTotL))   ### DEBUG ###
-  cpue <- NumTotL/EffTotL
-  cpue[is.na(cpue)] <- 0
-  ##print(summary(cpue))   ### DEBUG ###
-  std <- cpue[ , 1]
-  tst <- cpue[ , 2]
-  # Binomial weights based on number measured in both gears:
-  Nmeas <- with(sfdat, tapply(Number, list(LenBin, MMED), sum, na.rm=TRUE))
-  wts <- Nmeas[ , 1] + Nmeas[ , 2]
-  ##print(summary(wts))    ### DEBUG ###
-  p.L12 <- std / (std + tst)
-  ##p.L12 <- p.L12[!is.na(p.L12)]
-  ##print(summary(p.L12))   ### DEBUG ###
-  ##wts <- wts[!is.na(wts)]
-  L <- as.numeric(names(p.L12))
-  old.opt <- options(warn = -1) # suppress warnings about non-integer weights
-  res <- mgcv::gam(p.L12 ~ s(L, bs="cr", k=5), family=binomial, weights=wts)
-  options(old.opt)
-  return(res)
-}
-
-# klwg_BetaR <- function(sfdat) {
-#   print("BetaR Not Yet Implemented")
-# }
+  # Fit the model to the original (full) dataset:
+  fit.full <- fit.model(sdat)
+  # Predictions of full model, with rough SE's
+  if (is.null(L.pr)) L.pr <- seq(min(sdat$LenBin), max(sdat$LenBin), 5)
+  ##cat("L.pr: ", L.pr, "\n")   ### DEBUG ###
+  pred.full <- predict(fit.full, newdata=data.frame(L=L.pr, wts=1.0),
+                  type="response")
+  names(pred.full) <- L.pr
+  # Bootstrap predictions:
+  bs <- matrix(NA, nrow=length(L.pr), ncol=nrep, dimnames=list(L.pr, NULL))
+  rep <- 0
+  while (rep < nrep) {
+    hauls <- unique(sdat$Haul)
+    ##print (hauls)  ### DEBUG ###
+    hauls.samp <- sample(hauls, length(hauls), replace=TRUE)
+    ##print(hauls.samp)  ### DEBUG ###
+    .data <- data.frame()
+    for (h in hauls.samp) {
+      .hdata <- sdat[sdat$Haul == h, ]
+      # TODO: resample lengths within haul
+      .data <- rbind(.data, .hdata)
+    } # for (h)
+    names(.data) <- names(sdat)
+    ##print(summary(.data))   ### DEBUG ###
+    ##cat("N with no MMED: ", with(.data, sum(Number[MMED=="None"])), "\n") ### DEBUG ###
+    ##cat("N with MMED: ", with(.data, sum(Number[MMED!="None"])), "\n") ### DEBUG ###
+    fit.rep <- fit.model(.data)
+    rep <- rep+1
+    ##print(summary(fit.rep))   ### DEBUG ###
+    bs[ , rep] <- predict(fit.rep, newdata=data.frame(L=L.pr, wts=1.0),
+                          type="response")
+  } # for (rep)
+  rownames(bs) <- L.pr
+  ##print(bs[ , 1:5])   ### DEBUG ###
+  bs.mn <- apply(bs, 1, mean, na.rm=FALSE)
+  bs.q <- t(apply(bs, 1, quantile, probs=c(0,0.05,0.25,0.50,0.75,0.95,1),
+                  na.rm=FALSE))
+  return(list(gam=fit.full, pred=pred.full, boot=bs,
+              boot.sum=data.frame(mean=bs.mn, q=bs.q)))
+} # boot_SCMM()
 
 ## ---- SizeSelAnal
 for (excl in c("Up","Down")) {
@@ -167,21 +198,22 @@ for (excl in c("Up","Down")) {
       ##print(.y)     ### DEBUG ###
       if ((.x > 40) & (.y > 40)) {
       ##if ((length(!is.na(.x)) > 40) & (length(!is.na(.y)) > 40)) {
-        ##glmm <- klwg_GLMM(sfdat=.len)
-        scmm <- klwg_SCMM(sfdat=.len)
-        print(summary(scmm))
-        L.pred <- seq(.minL, .maxL, binsize)
-        pred <- predict(scmm, newdata=data.frame(L=L.pred, wts=1.0),
-                        type="response", se.fit=TRUE)
-        p.pred <- pred$fit
-        p.UL <- p.pred + 1.96*pred$se.fit
-        p.LL <- p.pred - 1.96*pred$se.fit
-        CR.obs <- 1/scmm$model$p.L12 - 1
+        scmm <- boot_SCMM(sdat=.len, nrep=1000, binsz=binsize)
+        print(summary(scmm$gam))
+        print(summary(scmm$boot.sum))   ### DEBUG ###
+        p.pred <- scmm$pred
+        L.pred <- as.numeric(names(p.pred))
+        ##p.UL <- p.pred + 1.96*pred$se.fit
+        ##p.LL <- p.pred - 1.96*pred$se.fit
+        CR.obs <- 1/scmm$gam$model$p.L12 - 1
         CR.pred <- 1/p.pred - 1
-        CR.UL <- 1/p.LL - 1
-        CR.UL[CR.UL > 1000] <- 1000 #recode infinite values
-        CR.LL <- 1/p.UL - 1
-        CR.LL[CR.LL < 0.001] <- 0.001 # recode zeros for log plot
+        ##CR.UL <- 1/p.LL - 1
+        ##CR.UL[CR.UL > 1000] <- 1000 #recode infinite values
+        ##CR.LL <- 1/p.UL - 1
+        ##CR.LL[CR.LL < 0.001] <- 0.001 # recode zeros for log plot
+        CR.boot <- 1/scmm$boot.sum - 1  # Convert bootstrap values from p to CR
+        CR.boot[CR.boot > 1000] <- 1000 #recode infinite values
+        CR.boot[CR.boot < 1/1000] <- 1/1000 #recode zero values
         plot(as.numeric(rownames(.dat)), -.dat[, 'None'], type='h', col=BLACK, lwd=1,
              xlim=c(.minL,.maxL), ylim=c(-.maxN,.maxN), axes=F,
              xlab='', ylab='')
@@ -200,9 +232,19 @@ for (excl in c("Up","Down")) {
         axis(side=4, at=c(0.02, 0.2, 1, 5, 50),
              labels=c("0.02", "0.2", "1", "5", "50"))
         # abline(h=1.0, col="red")
-        lines(L.pred, CR.UL, lty=2, lwd=2)
-        lines(L.pred, CR.LL, lty=2, lwd=2)
-        ##beta <- klwg_BetaR(sfdat=.len)
+        ##lines(L.pred, CR.UL, lty=2, lwd=2)
+        ##lines(L.pred, CR.LL, lty=2, lwd=2)
+        lines(L.pred, CR.boot[ ,"q.50."], lty=1, lwd=2, col="magenta") # bs median
+        lines(L.pred, CR.boot[ ,"q.5."], lty=2, lwd=2) # bs lower 5%
+        lines(L.pred, CR.boot[ ,"q.95."], lty=2, lwd=2) # bs upper 5%
+        ### DEBUG: ###
+        # print(scmm$gam$model)
+        # plot(scmm$gam$model$L, scmm$gam$model$p.L12, col="blue", ylim=c(-0.1,1.1))
+        # print(p.pred)
+        # lines(L.pred, p.pred)
+        # print(scmm$boot.sum[ , "mean"])
+        # matplot(L.pred, scmm$boot[, 1:5], type="l", add=TRUE)
+        ### END DEBUG ###
       } else {
         cat('\n Insufficient data \n')
       } # if (length...)
