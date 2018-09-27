@@ -152,21 +152,20 @@ bin them into 5 mm intervals for analysis.
 ```{r GetSizeData}
 ```
 
-Next, run the Size-Frequency (SF) analysis for each species. First tabulate the distributions
-across all samples by species and gear type. Then, plot the SFs and 
-apply both a Wilcox-Mann-Whitney test and a Kolmogorov-Smirnov test for 
+Next, run the Size-Frequency (SF) analysis for each species. First tabulate 
+the distributions across all samples by species and gear type. Then, apply 
+both a Wilcox-Mann-Whitney test and a Kolmogorov-Smirnov test for 
 gear differences. **NOTE** the several warnings that p-values are approximate 
 for the K-S test. We'll ignore the warnings, assume they're close enough as
 we're concerned with the patterns of size-selectivity, not significance tests.
-
-```{r SizeSummary, results='hold', eval=FALSE}
-```
-
-Then, conduct full gear Size-Selectivity Analysis, as in Kotwicki et al. (2017, Fish. Res. 191:76-86). We use their approach # 1 (their equations 1-4), where effort data is available and comparable between gears, so size distributions are compared on the basis of CPUE. Their equations assume a paired-trawl or split-trawl experimental design, so adjustments must be made for our stratified design.
-
-First, we define functions for each of the methods:
-```{r SizeSelMethods, results='hold'}
-```
+Then, conduct full gear Size-Selectivity Analysis, as in Kotwicki et al. 
+(2017, Fish. Res. 191:76-86). We use their approach # 1 (their equations 
+1-4), where effort data is available and comparable between gears, so size 
+distributions are compared on the basis of CPUE. We choose their "SSCM" method, 
+as that provides the most flexible curve-fitting, and in their analysis had 
+the best fit in all cases. Their equations assume a paired-trawl or split-
+trawl experimental design, so adjustments must be made for our stratified 
+design.
 
 ```{r SizeSelAnal, results='hold'}
 ```
