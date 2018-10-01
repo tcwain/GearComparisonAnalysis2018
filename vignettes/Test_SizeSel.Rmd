@@ -132,47 +132,9 @@ Generate the individual plots:
 ```{r DoCPUEPlots}
 ```
 
-## Part 3: Size-selectivity analysis
+## Part 3: Overall Catch Ratio Statistics
 
 ```{r file3, echo=FALSE}
-knitr::read_chunk(system.file('scripts', 'SizeSelectivity.R',
-                        package = "GearComparisonAnalysis2018"))
-```
-
-Because the two MED orientations were used in different years and locations, 
-we can't compare either MED to all the samples from the standard net, so we 
-separate this analysis into two groups: the upward MED tests in years 2011 & 
-2014, and the downward MED tests in 2015. 
-
-We analyze size-frequencies for the same set of species, but do not 
-subdivide salmon species by age group. To process the data, eliminate 
-records with no size measurements, clean up the list of species names, and
-bin them into 5 mm intervals for analysis.
-
-```{r GetSizeData}
-```
-
-Next, run the Size-Frequency (SF) analysis for each species. First tabulate 
-the distributions across all samples by species and gear type. Then, apply 
-both a Wilcox-Mann-Whitney test and a Kolmogorov-Smirnov test for 
-gear differences. **NOTE** the several warnings that p-values are approximate 
-for the K-S test. We'll ignore the warnings, assume they're close enough as
-we're concerned with the patterns of size-selectivity, not significance tests.
-Then, conduct full gear Size-Selectivity Analysis, as in Kotwicki et al. 
-(2017, Fish. Res. 191:76-86). We use their approach # 1 (their equations 
-1-4), where effort data is available and comparable between gears, so size 
-distributions are compared on the basis of CPUE. We choose their "SSCM" method, 
-as that provides the most flexible curve-fitting, and in their analysis had 
-the best fit in all cases. Their equations assume a paired-trawl or split-
-trawl experimental design, so adjustments must be made for our stratified 
-design.
-
-```{r SizeSelAnal, results='hold'}
-```
-
-## Part 4: Catch Ratio Statistics
-
-```{r file4, echo=FALSE}
 knitr::read_chunk(system.file('scripts', 'CatchRatioStats.R',
                         package = "GearComparisonAnalysis2018"))
 ```
@@ -203,12 +165,12 @@ offset is similar to using a linear model ``log(CPUE) ~ Block + Gear``.)
 After reviewing the methods, for the final analysis, we used only the GLM 
 method.
 
-### 4.1 The analysis
+### 3.1 The analysis
 
 To make the coding easier, we define standard names for the gear types, and 
 set the rounding parameters for easy-to-read results tables.
 
-```{r StatsSetup, eval=FALSE}
+```{r StatsSetup}
 ```
 
 Then, create a function to compute the GLM estimates. The _R_ ``glm()`` 
@@ -228,7 +190,7 @@ returned in ``$Pred`` for later plotting.
 **NOTE** that we want the ratio MED/STD, so we use the negative of the 
 log-scale ``GearStd`` coefficient. 
 
-```{r NegBinAnoDevFnc, eval=FALSE}
+```{r NegBinAnoDevFnc}
 ```
 
 Before running the analysis, create two summary lists: one for the means 
@@ -245,27 +207,65 @@ $\Theta$ parameter, which is used to initiate the refined estimate via
 ``glm.nb()``. If the refined estimate fails, the initial estimate of 
 $\Theta$ is used instead. 
 
-```{r RunStats, fig.width=6, fig.height=3, eval=FALSE}
+```{r RunStats, fig.width=6, fig.height=3}
 ```
 
-### 4.2 Summary of results
+### 3.2 Summary of results
 
 Method abbreviations for the summary are:
 
 * GLM.Po - GLM blocked AnoDev with Poisson
 * GLM.nb - GLM blocked AnoDev with negative binomial
 
-```{r CRSummaryTable, eval=FALSE}
+```{r CRSummaryTable}
 ```
 
 Next, generate summary figures of catch ratio estimates. In the plots, 
 the estimated mean is marked with "+" and the median with a diamond; 
 boxes span the quartiles, and whiskers extend to the 5% and 95% quantiles.
 
-```{r CRSummaryFig, eval=FALSE}
+```{r CRSummaryFig}
 ```
 
 And a single panel summary of just the GLM.nb results for both excluder types.
 
-```{r GLMSummaryFig, fig.width=9, fig.height=6, eval=FALSE}
+```{r GLMSummaryFig, fig.width=9, fig.height=6}
+```
+
+## Part 4: Size-selectivity analysis
+
+```{r file4, echo=FALSE}
+knitr::read_chunk(system.file('scripts', 'SizeSelectivity.R',
+                        package = "GearComparisonAnalysis2018"))
+```
+
+Because the two MED orientations were used in different years and locations,
+we can't compare either MED to all the samples from the standard net, so we 
+separate this analysis into two groups: the upward MED tests in years 2011 
+& 2014, and the downward MED tests in 2015. 
+
+We analyze size-frequencies for the same set of species, but do not 
+subdivide salmon species by age group. To process the data, eliminate 
+records with no size measurements, clean up the list of species names, and
+bin them into 5 mm intervals for analysis.
+
+```{r GetSizeData}
+```
+
+Next, run the Size-Frequency (SF) analysis for each species. First tabulate 
+the distributions across all samples by species and gear type. Then, apply 
+both a Wilcox-Mann-Whitney test and a Kolmogorov-Smirnov test for 
+gear differences. **NOTE** the several warnings that p-values are approximate 
+for the K-S test. We'll ignore the warnings, assume they're close enough as
+we're concerned with the patterns of size-selectivity, not significance tests.
+Then, conduct full gear Size-Selectivity Analysis, as in Kotwicki et al. 
+(2017, Fish. Res. 191:76-86). We use their approach # 1 (their equations 
+1-4), where effort data is available and comparable between gears, so size 
+distributions are compared on the basis of CPUE. We choose their "SSCM" method, 
+as that provides the most flexible curve-fitting, and in their analysis had 
+the best fit in all cases. Their equations assume a paired-trawl or split-
+trawl experimental design, so adjustments must be made for our stratified 
+design.
+
+```{r SizeSelAnal, results='hold'}
 ```
