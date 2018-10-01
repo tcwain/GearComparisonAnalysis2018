@@ -140,7 +140,8 @@ for (excl in c("Up","Down")) {
         print(wilcox.test(.x, .y, alt="two.sided"))
         print(ks.test(.x, .y))
         # SCMM method to fit Catch ratio to size:
-        scmm <- boot_SCMM(sdat=.len, nrep=1000, binsz=binsize)
+        scmm <- boot_SCMM(sdat=.len, nrep=10, binsz=binsize) ### Testing ###
+        ##scmm <- boot_SCMM(sdat=.len, nrep=1000, binsz=binsize) ### Production ###
         cat("\tSummary of GAM fit: \n")
         print(summary(scmm$gam))
         cat("\tSummary of bootstrap fits: \n")
@@ -170,10 +171,9 @@ for (excl in c("Up","Down")) {
              ylim=c(1/50, 50), xlab="", ylab="")
         axis(side=4, at=c(0.02, 0.2, 1, 5, 50),
              labels=c("0.02", "0.2", "1", "5", "50"))
-        # abline(h=1.0, col="red")
-        lines(L.pred, CR.boot[ , "q.50."], lty=2, lwd=2) # bs median
-        lines(L.pred, CR.boot[ , "q.5."], lty=3, lwd=2) # bs lower 5%
-        lines(L.pred, CR.boot[ , "q.95."], lty=3, lwd=2) # bs upper 5%
+        lines(L.pred, CR.boot[ , "q.50."], lty=1, col='gray50', lwd=2) # bs median
+        lines(L.pred, CR.boot[ , "q.5."], lty=2, lwd=2) # bs lower 5%
+        lines(L.pred, CR.boot[ , "q.95."], lty=2, lwd=2) # bs upper 5%
       } else {
         cat('\n Insufficient data \n')
       } # if (length...)
