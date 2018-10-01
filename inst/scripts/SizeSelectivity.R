@@ -54,7 +54,7 @@ boot_SCMM <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
     wts <- Nmeas[ , 1] + Nmeas[ , 2]
     L <- as.numeric(names(p.L12))
     old.opt <- options(warn = -1) # suppress warnings about non-integer values
-    fit.gam <- mgcv::gam(p.L12 ~ s(L, bs="cr", k=5), family=binomial, weights=wts)
+    fit.gam <- mgcv::gam(p.L12 ~ s(L, bs="cr", k=3), family=binomial, weights=wts)
     options(old.opt)
     return(fit.gam)
   } # fit.model()
