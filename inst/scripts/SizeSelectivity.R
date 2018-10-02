@@ -37,7 +37,7 @@ lenData$LenBin <- binsize * round(lenData$Length/binsize)
 
 ## ---- SizeSelAnal
 
-boot_SCMM <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
+boot_GLM3P <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
   fit.model <- function(sdat) {
     NumTotL <- with(sdat, tapply(AdjNum, list(LenBin, MMED), sum,
                                  na.rm=TRUE, default=0))
@@ -45,18 +45,22 @@ boot_SCMM <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
                                  na.rm=TRUE, default=0))
     cpue <- NumTotL/EffTotL
     cpue[is.na(cpue)] <- 0
-    std <- cpue[ , 1]
-    tst <- cpue[ , 2]
+    STD <- match("None", colnames(cpue))
+    TST <- match("Up", colnames(cpue))
+    if (is.na(TST)) TST <- match("Down", colnames(cpue))
+    std <- cpue[ , STD]
+    tst <- cpue[ , TST]
     p.L12 <- std / (std + tst)
     # Binomial weights based on number measured in both gears:
     Nmeas <- with(sdat, tapply(Number, list(LenBin, MMED), sum,
                                na.rm=TRUE, default=0))
-    wts <- Nmeas[ , 1] + Nmeas[ , 2]
+    wts <- Nmeas[ , STD] + Nmeas[ , TST]
     L <- as.numeric(names(p.L12))
     old.opt <- options(warn = -1) # suppress warnings about non-integer values
-    fit.gam <- mgcv::gam(p.L12 ~ s(L, bs="cr", k=3), family=binomial, weights=wts)
+##    fit.gam <- mgcv::gam(p.L12 ~ s(L, bs="cr", k=3), family=binomial, weights=wts)
+    fit.glm <- glm(p.L12 ~ L + I(L^2) + I(L^3), family=binomial, weights=wts)
     options(old.opt)
-    return(fit.gam)
+    return(fit.glm)
   } # fit.model()
 
   # Fit the model to the original (full) dataset:
@@ -103,7 +107,7 @@ boot_SCMM <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
                   na.rm=FALSE))
   return(list(gam=fit.full, pred=pred.full, boot=bs,
               boot.sum=data.frame(mean=bs.mn, q=bs.q)))
-} # boot_SCMM()
+} # boot_GLM3P()
 
 for (excl in c("Up","Down")) {
   cat('\n**************** Excluder: ', excl, ' *****************\n')
@@ -139,19 +143,19 @@ for (excl in c("Up","Down")) {
         # Wilcox & KS test for overall difference in size-frequencies
         print(wilcox.test(.x, .y, alt="two.sided"))
         print(ks.test(.x, .y))
-        # SCMM method to fit Catch ratio to size:
-        scmm <- boot_SCMM(sdat=.len, nrep=10, binsz=binsize) ### Testing ###
-        ##scmm <- boot_SCMM(sdat=.len, nrep=1000, binsz=binsize) ### Production ###
+        # GLM fit of Catch Ratio to size:
+        mod.fit <- boot_GLM3P(sdat=.len, nrep=50, binsz=binsize) ### Testing ###
+        ##mod.fit <- boot_GLM3P(sdat=.len, nrep=1000, binsz=binsize) ### Production ###
         cat("\tSummary of GAM fit: \n")
-        print(summary(scmm$gam))
+        print(summary(mod.fit$gam))
         cat("\tSummary of bootstrap fits: \n")
-        print(summary(scmm$boot.sum))
-        p.pred <- scmm$pred
+        print(summary(mod.fit$boot.sum))
+        p.pred <- mod.fit$pred
         L.pred <- as.numeric(names(p.pred))
         # Convert probability to Catch Ratio:
-        CR.obs <- 1/scmm$gam$model$p.L12 - 1
+        CR.obs <- 1/mod.fit$gam$model$p.L12 - 1
         CR.pred <- 1/p.pred - 1
-        CR.boot <- 1/scmm$boot.sum - 1
+        CR.boot <- 1/mod.fit$boot.sum - 1
         CR.boot[CR.boot > 1000] <- 1000 #recode infinite values
         CR.boot[CR.boot < 1/1000] <- 1/1000 #recode zero values
         plot(as.numeric(rownames(.dat)), -.dat[, 'None'], type='h', col=BLACK, lwd=1,
@@ -172,8 +176,8 @@ for (excl in c("Up","Down")) {
         axis(side=4, at=c(0.02, 0.2, 1, 5, 50),
              labels=c("0.02", "0.2", "1", "5", "50"))
         lines(L.pred, CR.boot[ , "q.50."], lty=1, col='gray50', lwd=2) # bs median
-        lines(L.pred, CR.boot[ , "q.5."], lty=2, lwd=2) # bs lower 5%
-        lines(L.pred, CR.boot[ , "q.95."], lty=2, lwd=2) # bs upper 5%
+        lines(L.pred, CR.boot[ , "q.5."], lty=2, col='gray50', lwd=2) # bs lower 5%
+        lines(L.pred, CR.boot[ , "q.95."], lty=2, col='gray50', lwd=2) # bs upper 5%
       } else {
         cat('\n Insufficient data \n')
       } # if (length...)
