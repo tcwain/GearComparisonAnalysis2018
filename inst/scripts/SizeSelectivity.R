@@ -34,6 +34,12 @@ lenData <- lenData[!is.na(lenData$Length), ] #Already accounted for in AdjNum
 # Length bin size (mm)
 binsize <- 5
 lenData$LenBin <- binsize * round(lenData$Length/binsize)
+# Remove size outliers for anchovy & water jelly (likely data errors)
+lenData <- lenData[!((lenData$Species == "NORTHERN ANCHOVY") &
+                        (lenData$Length < 100)), ]
+lenData <- lenData[!((lenData$Species =="WATER JELLY") &
+                        (lenData$Length > 150)), ]
+
 
 ## ---- SizeSelAnal
 
@@ -57,7 +63,6 @@ boot_GLM3P <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
     wts <- Nmeas[ , STD] + Nmeas[ , TST]
     L <- as.numeric(names(p.L12))
     old.opt <- options(warn = -1) # suppress warnings about non-integer values
-##    fit.gam <- mgcv::gam(p.L12 ~ s(L, bs="cr", k=3), family=binomial, weights=wts)
     fit.glm <- glm(p.L12 ~ L + I(L^2) + I(L^3), family=binomial, weights=wts)
     options(old.opt)
     return(fit.glm)
@@ -144,8 +149,8 @@ for (excl in c("Up","Down")) {
         print(wilcox.test(.x, .y, alt="two.sided"))
         print(ks.test(.x, .y))
         # GLM fit of Catch Ratio to size:
-        mod.fit <- boot_GLM3P(sdat=.len, nrep=50, binsz=binsize) ### Testing ###
-        ##mod.fit <- boot_GLM3P(sdat=.len, nrep=1000, binsz=binsize) ### Production ###
+        ##mod.fit <- boot_GLM3P(sdat=.len, nrep=10, binsz=binsize) ### Testing ###
+        mod.fit <- boot_GLM3P(sdat=.len, nrep=1000, binsz=binsize) ### Production ###
         cat("\tSummary of GAM fit: \n")
         print(summary(mod.fit$gam))
         cat("\tSummary of bootstrap fits: \n")
