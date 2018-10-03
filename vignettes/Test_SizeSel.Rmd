@@ -239,33 +239,39 @@ knitr::read_chunk(system.file('scripts', 'SizeSelectivity.R',
                         package = "GearComparisonAnalysis2018"))
 ```
 
-Because the two MED orientations were used in different years and locations,
-we can't compare either MED to all the samples from the standard net, so we 
-separate this analysis into two groups: the upward MED tests in years 2011 
-& 2014, and the downward MED tests in 2015. 
-
-We analyze size-frequencies for the same set of species, but do not 
-subdivide salmon species by age group. To process the data, eliminate 
-records with no size measurements, clean up the list of species names, and
-bin them into 5 mm intervals for analysis.
+We analyze size-frequencies for the same set of species selected above, 
+but do not subdivide salmon species by age group. For an unbiased analysis, 
+we first compute the size subsampling ratio (individuals measured / 
+number caught) for each species in each haul, and compute adjusted counts 
+by size We then bin sizes into 5 mm intervals, and eliminate a couple
+size outliers for anchovy and water jelly (appear to be erroneous data 
+that  are overly influential in the analysis).
 
 ```{r GetSizeData}
 ```
 
-Next, run the Size-Frequency (SF) analysis for each species. First tabulate 
+Next, run the Size-Frequency (SF) analysis for each species. Because the 
+length data is sparse for most species, we analyze only the bulk data 
+across all haul samples, ignoring the data blocks. First tabulate 
 the distributions across all samples by species and gear type. Then, apply 
 both a Wilcox-Mann-Whitney test and a Kolmogorov-Smirnov test for 
-gear differences. **NOTE** the several warnings that p-values are approximate 
-for the K-S test. We'll ignore the warnings, assume they're close enough as
-we're concerned with the patterns of size-selectivity, not significance tests.
-Then, conduct full gear Size-Selectivity Analysis, as in Kotwicki et al. 
-(2017, Fish. Res. 191:76-86). We use their approach # 1 (their equations 
-1-4), where effort data is available and comparable between gears, so size 
-distributions are compared on the basis of CPUE. We choose their "SSCM" method, 
-as that provides the most flexible curve-fitting, and in their analysis had 
-the best fit in all cases. Their equations assume a paired-trawl or split-
-trawl experimental design, so adjustments must be made for our stratified 
-design.
+gear differences. **NOTE** the several warnings that p-values are 
+approximate for the K-S test. We'll ignore the warnings, assuming they're 
+close enough as we're concerned with the patterns of size-selectivity, 
+and only note the highly significant results.
+
+Then, conduct full gear Size-Selectivity Analysis, fitting a smooth curve 
+(3rd-order polynomial) to the size-specific catch ratio data using a 
+binomial GLM with logit link function, similar to models in Krag et al. 
+(2014 PLOS One), Herrmann et al. (2017 Fish. Res.), & Kotwicki et al. 
+(2017 Fish. Res.). The model is first fit to the full data set, then the 
+error distribution is approximated via a double bootstrap (Millar 1993 
+Fish. Bull.) resampling both among hauls and among fish within hauls.
+
+Because the two MED orientations were used in different years and locations,
+we can't compare either MED to all the samples from the standard net, so we 
+separate this analysis into two groups: the upward MED tests in years 2011 
+& 2014, and the downward MED tests in 2015. 
 
 ```{r SizeSelAnal, results='hold'}
 ```

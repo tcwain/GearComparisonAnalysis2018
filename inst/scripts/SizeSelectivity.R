@@ -14,8 +14,9 @@ len.spec <- c("CHINOOK SALMON", "CHUM SALMON", "COHO SALMON",
              "SEA NETTLE", "WATER JELLY")
 lenData <- MMEDdata[ , c("Cruise","MMED","Species","Length",
                          "Number","Distance","Haul")]
+lenData <- lenData[lenData$Species %in% len.spec, ]
 # Add subsample ratio:
-# Total number by Haul (rows) and Species
+# Total number by Haul (rows) and Species (cols)
 cnt <- with (lenData, tapply(Number, list(Haul, Species), FUN=sum, simplify=T))
 cnt[is.na(cnt)] <- 0
 cnt <- as.data.frame(cnt)
@@ -25,12 +26,12 @@ meas[is.na(meas)] <- 0
 meas <- as.data.frame(meas)
 # Subsampling ratio by Haul & Species:
 ssr <- meas / cnt
+cat('\nSubsampling Ratios:\n')
+print(summary(ssr))
 # Adjusted Numbers (expanded by ssr)
 lenData <- lenData[!is.na(lenData$Length), ] #remove non-measured counts
 lenData$AdjNum <- lenData$Number / unlist(apply(lenData[c("Haul","Species")], 1,
                   function(x){ssr[x["Haul"], x["Species"]]}))
-lenData <- lenData[lenData$Species %in% len.spec, ]
-lenData <- lenData[!is.na(lenData$Length), ] #Already accounted for in AdjNum
 # Length bin size (mm)
 binsize <- 5
 lenData$LenBin <- binsize * round(lenData$Length/binsize)
@@ -39,7 +40,8 @@ lenData <- lenData[!((lenData$Species == "NORTHERN ANCHOVY") &
                         (lenData$Length < 100)), ]
 lenData <- lenData[!((lenData$Species =="WATER JELLY") &
                         (lenData$Length > 150)), ]
-
+cat('\nSummary of Length Data:\n')
+print(summary(lenData))
 
 ## ---- SizeSelAnal
 
@@ -149,7 +151,7 @@ for (excl in c("Up","Down")) {
         print(wilcox.test(.x, .y, alt="two.sided"))
         print(ks.test(.x, .y))
         # GLM fit of Catch Ratio to size:
-        ##mod.fit <- boot_GLM3P(sdat=.len, nrep=10, binsz=binsize) ### Testing ###
+        ##mod.fit <- boot_GLM3P(sdat=.len, nrep=50, binsz=binsize) ### Testing ###
         mod.fit <- boot_GLM3P(sdat=.len, nrep=1000, binsz=binsize) ### Production ###
         cat("\tSummary of GAM fit: \n")
         print(summary(mod.fit$gam))
@@ -176,7 +178,7 @@ for (excl in c("Up","Down")) {
         abline(h=0, lwd=1)
         # add Catch Ratio plot on right axis
         par(new=TRUE)
-        plot(L.pred, CR.pred, log="y", type='l', lwd=2, axes=FALSE, bty="n",
+        plot(L.pred, CR.pred, log="y", type='l', lwd=3, axes=FALSE, bty="n",
              ylim=c(1/50, 50), xlab="", ylab="")
         axis(side=4, at=c(0.02, 0.2, 1, 5, 50),
              labels=c("0.02", "0.2", "1", "5", "50"))
