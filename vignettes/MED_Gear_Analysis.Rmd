@@ -255,6 +255,8 @@ knitr::read_chunk(system.file('scripts', 'SizeSelectivity.R',
                         package = "GearComparisonAnalysis2018"))
 ```
 
+### 4.1: Size-frequency Data
+
 We analyze size-frequencies for the same set of species selected above, 
 but do not subdivide salmon species by age group. For an unbiased analysis, 
 we first compute the size subsampling ratio (individuals measured / 
@@ -265,6 +267,8 @@ that  are overly influential in the analysis).
 
 ```{r GetSizeData}
 ```
+
+### 4.2: Analysis Methods
 
 Next, run the Size-Frequency (SF) analysis for each species. Because the 
 length data is sparse for most species, we analyze only the bulk data 
@@ -282,11 +286,18 @@ binomial GLM with logit link function, similar to models in Krag et al.
 (2014 PLOS One), Herrmann et al. (2017 Fish. Res.), & Kotwicki et al. 
 (2017 Fish. Res.). The model is first fit to the full data set, then the 
 error distribution is approximated via a double bootstrap (Millar 1993 
-Fish. Bull.) resampling both among hauls and among fish within hauls.
+Fish. Bull.) resampling both among hauls and among fish within hauls. We 
+define a function for this analysis, so it can be applied to combinations 
+of gear and species.
+
+```{r SizeSelMethods}
+```
+
+### 4.3 Results
 
 Because the two MED orientations were used in different years and locations,
 we can't compare either MED to all the samples from the standard net, so we 
-separate this analysis into two groups: the upward MED tests in years 2011 
+run this analysis into two groups: the upward MED tests in years 2011 
 & 2014, and the downward MED tests in 2015. 
 
 ```{r SizeSelAnal, results='hold'}
