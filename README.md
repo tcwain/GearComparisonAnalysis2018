@@ -1,13 +1,20 @@
 # GearComparisonAnalysis2018
 
-### NOTE: Not yet working! Do not install.
+This R package contains all data and R-language scripts needed to reproduce the 
+analysis in Wainwright et al. (2018, _Effect of a mammal excluder device on 
+catches of small pelagic fishes_, **Marine and Coastal Fisheries** _in review_).
 
-This R package contains all data and R-language scripts needed to reproduce the analysis in Wainwright et al., _Effect of a mammal excluder device on catches of small pelagic fishes._
+The full analysis and detailed results for the publication are in the vignette
+"MED_Gear_Analysis.pdf", which can be regenerated on package installation. Data and 
+R scripts used in the vignette can be found in the package source subdirectories 
+_inst/extdata_ and _inst/scripts_, respectively.
 
-The full analysis is contained in the package vignette "MED_Gear_Analysis.pdf" that is generated on package installation. Data and R scripts used in the vignette can be found in the package source subdirectories _inst/extdata_ and _inst/scripts_, respecively.
+To install the package with an updated vignette in R, run
 
-To install the package in R, run
 ```
 install.packages("devtools")
 devtools::install_github("tcwain/GearComparisonAnalysis2018", build_vignettes=TRUE)
 ```
+
+Building the vignette may require additional system software, including _TeX_ and 
+_pandoc_.
