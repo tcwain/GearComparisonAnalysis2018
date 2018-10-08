@@ -55,6 +55,7 @@ MMEDdata$Block <- blocks[match(MMEDdata$Haul, sortHauls)]
 
 ## ---- TotCatchBySpecies
 
+cat('\n*** Total Catch By Species and Gear Type ***\n')
 tab1 <- with(MMEDdata, tapply(Number, list(SpecAge, MMED), sum, na.rm=T))
 tab1[is.na(tab1)] <- 0  #Missing values are actually zero counts
 tab1 <- cbind(tab1, Total=apply(tab1, 1, sum))
@@ -62,6 +63,7 @@ print(tab1[ , c('Down', 'Up', 'None', 'Total')])
 
 ## ---- FrequencyBySpecies
 
+cat('\n*** Frequency of Catch By Species and Gear Type ***\n')
 .tmp.all <- with(MMEDdata, table(SpecAge, Haul))
 .tmp.std <- with(MMEDdata[MMEDdata$MMED=='None', ], table(SpecAge, Haul))
 .tmp.up <- with(MMEDdata[MMEDdata$MMED=='Up', ], table(SpecAge, Haul))
@@ -75,6 +77,7 @@ print(tab2)
 
 ## ---- SpeciesByCruise
 
+cat('\n*** Total Catch By Species and Cruise ***\n')
 tab3 <- with(MMEDdata, tapply(Number, list(SpecAge, Cruise), sum, na.rm=T))
 tab3[is.na(tab3)] <- 0  #Missing values are actually zero counts
 ngt0 <- apply(tab3>0, 1, sum)
@@ -82,7 +85,24 @@ ngt1 <- apply(tab3>1, 1, sum)
 tab3 <- cbind(tab3, Ngt0=ngt0, Ngt1=ngt1)
 print(tab3)
 
+## ---- NumMeasBySpecies
+
+cat('\n*** Total Number Measured By Species and Gear Type ***\n')
+tab4 <- with(MMEDdata[!is.na(MMEDdata$Length), ],
+             tapply(Number, list(SpecAge, MMED), sum, na.rm=T))
+tab4[is.na(tab4)] <- 0  #Missing values are actually zero counts
+tab4 <- cbind(tab4, Total=apply(tab4, 1, sum))
+print(tab4[ , c('Down', 'Up', 'None', 'Total')])
+
+## ---- SSRBySpecies
+
+cat('\n*** Average Subsampling Rate By Species and Gear Type ***\n')
+tab5 <- round(tab4/tab1,2)
+print(tab5[ , c('Down', 'Up', 'None', 'Total')])
+
 ## ---- SelSpecies
+
+cat('\n*** Species Selected for Analysis ***\n')
 sel.spec <- rownames(tab1)[tab1[ ,"Total"] >= 100]
 sel.spec <- sel.spec[sel.spec %in% rownames(tab3[tab3[,"Ngt1"]>=3, ])]
 print(sel.spec)

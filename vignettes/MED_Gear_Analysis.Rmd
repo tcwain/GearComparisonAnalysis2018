@@ -78,6 +78,13 @@ Then, create a summary table of total catch by species and gear type
 ```{r TotCatchBySpecies}
 ```
 
+... and the same for number measured and subsampling rate (for size-selectivity analysis), ...
+
+```{r NumMeasBySpecies}
+```
+```{r SSRBySpecies}
+```
+
 ... and, do the same for frequency of catch.
 
 ```{r FrequencyBySpecies}
