@@ -43,7 +43,7 @@ lenData <- lenData[!((lenData$Species =="WATER JELLY") &
 cat('\nSummary of Length Data:\n')
 print(summary(lenData))
 
-## ---- SizeSelAnal
+## ---- SizeSelMethods
 
 boot_GLM3P <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
   fit.model <- function(sdat) {
@@ -116,6 +116,12 @@ boot_GLM3P <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
               boot.sum=data.frame(mean=bs.mn, q=bs.q)))
 } # boot_GLM3P()
 
+## ---- SizeSelAnal
+
+# Set number of bootstrap replicates:
+nbsr <- 50   ### TESTING ###
+## nbsr <- 1000 ### PRODUCTION ###
+
 for (excl in c("Up","Down")) {
   cat('\n**************** Excluder: ', excl, ' *****************\n')
   lD <- if(excl %in% "Up") {
@@ -151,8 +157,7 @@ for (excl in c("Up","Down")) {
         print(wilcox.test(.x, .y, alt="two.sided"))
         print(ks.test(.x, .y))
         # GLM fit of Catch Ratio to size:
-        ##mod.fit <- boot_GLM3P(sdat=.len, nrep=50, binsz=binsize) ### Testing ###
-        mod.fit <- boot_GLM3P(sdat=.len, nrep=1000, binsz=binsize) ### Production ###
+        mod.fit <- boot_GLM3P(sdat=.len, nrep=nbsr, binsz=binsize)
         cat("\tSummary of GAM fit: \n")
         print(summary(mod.fit$gam))
         cat("\tSummary of bootstrap fits: \n")
