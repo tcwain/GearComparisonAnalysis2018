@@ -112,7 +112,7 @@ boot_GLM3P <- function(sdat, nrep=10, binsz=5, L.pr=NULL) {
   bs.mn <- apply(bs, 1, mean, na.rm=FALSE)
   bs.q <- t(apply(bs, 1, quantile, probs=c(0,0.05,0.25,0.50,0.75,0.95,1),
                   na.rm=FALSE))
-  return(list(gam=fit.full, pred=pred.full, boot=bs,
+  return(list(glm=fit.full, pred=pred.full, boot=bs,
               boot.sum=data.frame(mean=bs.mn, q=bs.q)))
 } # boot_GLM3P()
 
@@ -158,15 +158,15 @@ for (excl in c("Up","Down")) {
         print(ks.test(.x, .y))
         # GLM fit of Catch Ratio to size:
         mod.fit <- boot_GLM3P(sdat=.len, nrep=nbsr, binsz=binsize)
-        cat("\tSummary of GAM fit: \n")
-        print(summary(mod.fit$gam))
-        print(anova(mod.fit$gam, test="Chisq"))
-        cat("\tSummary of bootstrap fits: \n")
+        cat("\tSummary of GLM fit: \n")
+        print(summary(mod.fit$glm))
+        print(anova(mod.fit$glm, test="Chisq"))
+        cat("\n\tSummary of bootstrap fits: \n")
         print(summary(mod.fit$boot.sum))
         p.pred <- mod.fit$pred
         L.pred <- as.numeric(names(p.pred))
         # Convert probability to Catch Ratio:
-        CR.obs <- 1/mod.fit$gam$model$p.L12 - 1
+        CR.obs <- 1/mod.fit$glm$model$p.L12 - 1
         CR.pred <- 1/p.pred - 1
         CR.boot <- 1/mod.fit$boot.sum - 1
         CR.boot[CR.boot > 1000] <- 1000 #recode infinite values
