@@ -160,6 +160,7 @@ for (excl in c("Up","Down")) {
         mod.fit <- boot_GLM3P(sdat=.len, nrep=nbsr, binsz=binsize)
         cat("\tSummary of GAM fit: \n")
         print(summary(mod.fit$gam))
+        print(anova(mod.fit$gam, test="Chisq"))
         cat("\tSummary of bootstrap fits: \n")
         print(summary(mod.fit$boot.sum))
         p.pred <- mod.fit$pred
