@@ -100,7 +100,7 @@ Examining these tables, for analysis we select the species that have total catch
 ```{r SelSpecies}
 ```
 
-## Part2: Summary plots - CPUE by time
+## Part 2: Summary plots - CPUE by time
 
 ```{r file2, echo=FALSE}
 knitr::read_chunk(system.file('scripts', 'DataSummaryPlots.R',
@@ -248,6 +248,7 @@ And a single panel summary of just the GLM.nb results for both excluder types.
 
 ```{r GLMSummaryFig, fig.width=9, fig.height=6}
 ```
+
 ## Part 4: Size-selectivity analysis
 
 ```{r file4, echo=FALSE}
